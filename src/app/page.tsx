@@ -12,6 +12,7 @@ import LayerLab from "@/components/LayerLab"
 import { UserPreferences, Fragrance } from "@/types"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
+import Link from "next/link"
 
 function AppContent() {
   const searchParams = useSearchParams()
@@ -110,6 +111,12 @@ function AppContent() {
             >
               Layer_Lab
             </button>
+            <Link
+              href="/clash"
+              className="text-[10px] tracking-[0.3em] uppercase px-4 py-1 transition-all border-b text-white/40 border-transparent hover:text-retro-cyan hover:border-retro-cyan"
+            >
+              Clash_Demo
+            </Link>
           </div>
         </header>
 
