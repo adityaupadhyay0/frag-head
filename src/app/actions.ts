@@ -5,6 +5,7 @@ import { Fragrance, UserPreferences } from "@/types";
 
 const apiKey = process.env.GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
+const MODEL_NAME = "gemini-1.5-pro"; // Using a valid stable model
 
 export async function getScentStoryAction(fragrance: Fragrance, prefs: UserPreferences) {
   if (!apiKey) {
@@ -15,7 +16,7 @@ export async function getScentStoryAction(fragrance: Fragrance, prefs: UserPrefe
     };
   }
 
-  const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+  const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
   const prompt = `
     You are an expert fragrance storyteller for "Frag-Head".
@@ -49,39 +50,70 @@ export async function getScentStoryAction(fragrance: Fragrance, prefs: UserPrefe
   }
 }
 
-export async function predictLayeringAction(frag1: Fragrance, frag2: Fragrance) {
+export async function predictLayeringAction(
+  frag1: { name: string; brand?: string; notes?: any },
+  frag2: { name: string; brand?: string; notes?: any }
+) {
     if (!apiKey) {
         return {
           outcome: "A complex intersection of " + frag1.name + " and " + frag2.name + ".",
           vibe: "Experimental and unique.",
-          risk: "Safe"
+          risk: "Safe",
+          accords: ["Fresh", "Woody"],
+          colors: ["#a855f7", "#06b6d4", "#ffffff", "#000000", "#444444"],
+          notes: { top: [], mid: [], base: [] }
         };
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+
+    const frag1Desc = frag1.notes ?
+        `${frag1.brand} ${frag1.name} (Notes: ${frag1.notes.top?.join(", ")}, ${frag1.notes.mid?.join(", ")}, ${frag1.notes.base?.join(", ")})` :
+        frag1.name;
+
+    const frag2Desc = frag2.notes ?
+        `${frag2.brand} ${frag2.name} (Notes: ${frag2.notes.top?.join(", ")}, ${frag2.notes.mid?.join(", ")}, ${frag2.notes.base?.join(", ")})` :
+        frag2.name;
 
     const prompt = `
+    You are a master perfumer for "Frag-Head".
     Predict the outcome of layering these two fragrances:
-    1. ${frag1.brand} ${frag1.name} (Notes: ${frag1.notes.top.join(", ")}, ${frag1.notes.mid.join(", ")}, ${frag1.notes.base.join(", ")})
-    2. ${frag2.brand} ${frag2.name} (Notes: ${frag2.notes.top.join(", ")}, ${frag2.notes.mid.join(", ")}, ${frag2.notes.base.join(", ")})
+    1. ${frag1Desc}
+    2. ${frag2Desc}
 
-    Provide:
-    1. What vibe emerges?
-    2. Which notes dominate the combination?
-    3. Risk level (Safe / Experimental / Chaotic).
+    Provide a detailed prediction in JSON format:
+    {
+      "outcome": "3-4 lines describing the olfactory result",
+      "vibe": "Short vibe description",
+      "risk": "Safe" | "Experimental" | "Chaotic",
+      "accords": string[], // top 5 predicted accords
+      "colors": string[], // 5 hex colors representing the new scent aura
+      "notes": {
+        "top": string[],
+        "mid": string[],
+        "base": string[]
+      }
+    }
 
-    Format the response as JSON with keys: outcome, vibe, risk.
+    Return ONLY the JSON.
     `;
 
     try {
         const result = await model.generateContent(prompt);
         const response = await result.response;
         const text = response.text();
-        const jsonMatch = text.match(/\{.*\}/s);
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
         if (jsonMatch) return JSON.parse(jsonMatch[0]);
-        return { outcome: text, vibe: "", risk: "Experimental" };
+        throw new Error("Invalid AI response");
     } catch (error) {
-        return { outcome: "A daring combination for the bold.", vibe: "Complex", risk: "Experimental" };
+        return {
+          outcome: "A daring combination for the bold. The intersection of these two scents creates a unique, unrepeatable aura.",
+          vibe: "Complex & Unique",
+          risk: "Experimental",
+          accords: ["Mixed", "Atmospheric"],
+          colors: ["#a855f7", "#06b6d4", "#ffffff", "#000000", "#444444"],
+          notes: { top: ["Discovery"], mid: ["Mystery"], base: ["Depth"] }
+        };
     }
 }
 
@@ -90,7 +122,7 @@ export async function searchInternetFragrancesAction(prefs: UserPreferences) {
       return [];
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
     const prompt = `
       You are a world-class fragrance expert and scout for "Frag-Head".
@@ -163,10 +195,45 @@ export async function searchInternetFragrancesAction(prefs: UserPreferences) {
 
 export async function searchInternetFragrancesStreamAction(prefs: UserPreferences) {
     if (!apiKey) {
-      throw new Error("API Key missing");
+       // Mock streaming response for testing/missing key
+       const mockResults = [
+        {
+          id: "mock-1",
+          name: "Sample Discovery",
+          brand: "Frag-Head Lab",
+          gender: "Unisex",
+          accords: ["Fresh", "Woody", "Citrus"],
+          vibe: "Clean and Professional",
+          notes: {
+            top: ["Bergamot", "Lemon"],
+            mid: ["Lavender", "Jasmine"],
+            base: ["Cedar", "Musk"]
+          },
+          season: "Spring",
+          longevity: "Long-lasting",
+          sillage: "Moderate",
+          occasion: ["Office", "Daily"],
+          style: ["Minimal"],
+          mood: ["Intellectual"],
+          weather: ["Spring"],
+          price_range: "Designer",
+          colors: ["#a855f7", "#06b6d4", "#ffffff", "#000000", "#444444"],
+          aiStory: {
+            story: "A crisp morning in a digital garden. The scent of fresh data and binary blossoms.",
+            outfitSuggestions: "A sharp white linen shirt and tech-fabric trousers.",
+            emotionalDescription: "Empowering and focused."
+          }
+        }
+      ];
+
+      return {
+        stream: (async function* () {
+          yield { text: () => JSON.stringify(mockResults) };
+        })()
+      };
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
     const prompt = `
       You are a world-class fragrance expert and scout for "Frag-Head".

@@ -43,3 +43,16 @@ export interface UserPreferences {
   extraNotes?: string;
   _autoGlobal?: boolean;
 }
+
+export interface LayeringResult {
+  outcome: string;
+  vibe: string;
+  risk: "Safe" | "Experimental" | "Chaotic";
+  accords: string[];
+  colors: string[];
+  notes: {
+    top: string[];
+    mid: string[];
+    base: string[];
+  };
+}
