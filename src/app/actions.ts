@@ -84,3 +84,114 @@ export async function predictLayeringAction(frag1: Fragrance, frag2: Fragrance) 
         return { outcome: "A daring combination for the bold.", vibe: "Complex", risk: "Experimental" };
     }
 }
+
+export async function searchInternetFragrancesAction(prefs: UserPreferences) {
+    if (!apiKey) {
+      return [];
+    }
+
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    const prompt = `
+      You are a world-class fragrance expert and scout for "Frag-Head".
+      The user is looking for new fragrances across the entire world (internet knowledge) based on their profile.
+
+      User Profile:
+      - Occasion: ${prefs.occasion}
+      - Outfit Style: ${prefs.outfit}
+      - Mood/Vibe: ${prefs.mood}
+      - Weather: ${prefs.weather}
+      - Gender: ${prefs.gender}
+      - Budget: ${prefs.budget}
+      - Extra Notes: ${prefs.extraNotes}
+
+      Find 3-5 unique and matching fragrances that are NOT typically in a basic starter kit.
+      Return the results as a JSON array of objects following this exact structure:
+
+      {
+        id: string; // unique slug
+        name: string;
+        brand: string;
+        gender: "Men" | "Women" | "Unisex";
+        accords: string[];
+        vibe: string;
+        notes: {
+          top: string[];
+          mid: string[];
+          base: string[];
+        };
+        season: string;
+        longevity: string;
+        sillage: string;
+        occasion: string[];
+        style: string[];
+        mood: string[];
+        weather: string[];
+        price_range: "Designer" | "Luxury";
+        colors: string[]; // 5 hex colors that represent the scent vibe
+      }
+
+      Return ONLY the JSON array. Do not include markdown formatting like \`\`\`json.
+    `;
+
+    try {
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+      // Try to find array in the response
+      const jsonMatch = text.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+          const cleanJson = jsonMatch[0].replace(/```json|```/g, "");
+          return JSON.parse(cleanJson) as Fragrance[];
+      }
+      return [];
+    } catch (error) {
+      console.error("Error searching internet fragrances:", error);
+      return [];
+    }
+  }
+
+export async function rankLocalMatchesAction(prefs: UserPreferences, fragrances: Fragrance[]) {
+    if (!apiKey) return fragrances.slice(0, 5);
+
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    // We only send a subset of data to avoid token limits
+    const fragList = fragrances.map(f => ({
+        id: f.id,
+        name: f.name,
+        brand: f.brand,
+        notes: f.notes,
+        vibe: f.vibe
+    }));
+
+    const prompt = `
+    You are a fragrance matching AI. Rank the following local fragrances based on the user preferences.
+
+    User Preferences:
+    - Occasion: ${prefs.occasion}
+    - Style: ${prefs.outfit}
+    - Mood: ${prefs.mood}
+    - Weather: ${prefs.weather}
+    - Extra Notes: ${prefs.extraNotes}
+
+    Fragrances to rank:
+    ${JSON.stringify(fragList)}
+
+    Return a JSON array of fragrance IDs in order of best match to worst. Return ONLY the JSON array.
+    `;
+
+    try {
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
+        const jsonMatch = text.match(/\[.*\]/s);
+        if (jsonMatch) {
+            const ids = JSON.parse(jsonMatch[0]) as string[];
+            return ids.map(id => fragrances.find(f => f.id === id)).filter(Boolean) as Fragrance[];
+        }
+        return fragrances.slice(0, 5);
+    } catch (error) {
+        return fragrances.slice(0, 5);
+    }
+}

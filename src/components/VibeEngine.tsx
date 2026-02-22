@@ -6,7 +6,7 @@ import { UserPreferences, Occasion, Outfit, Mood, Weather, Gender, PriceRange } 
 import { cn } from "@/lib/utils"
 
 interface VibeEngineProps {
-  onComplete: (prefs: UserPreferences) => void
+  onComplete: (prefs: UserPreferences, autoGlobal?: boolean) => void
 }
 
 const steps = [
@@ -39,23 +39,34 @@ const steps = [
     id: "budget",
     label: "BUDGET RANGE",
     options: ["Designer", "Luxury"]
+  },
+  {
+    id: "extraNotes",
+    label: "ANYTHING ELSE TO ADD?",
+    options: []
   }
 ]
 
 export default function VibeEngine({ onComplete }: VibeEngineProps) {
   const [currentStep, setCurrentStep] = useState(0)
   const [prefs, setPrefs] = useState<UserPreferences>({})
+  const [customInput, setCustomInput] = useState("")
 
-  const handleSelect = (option: string) => {
+  const handleNext = (value: string, autoGlobal: boolean = false) => {
     const key = steps[currentStep].id as keyof UserPreferences
-    const newPrefs = { ...prefs, [key]: option }
+    const newPrefs = { ...prefs, [key]: value }
     setPrefs(newPrefs)
+    setCustomInput("")
 
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1)
     } else {
-      onComplete(newPrefs)
+      onComplete(newPrefs, autoGlobal)
     }
+  }
+
+  const handleSelect = (option: string) => {
+    handleNext(option)
   }
 
   return (
@@ -87,6 +98,66 @@ export default function VibeEngine({ onComplete }: VibeEngineProps) {
                 </span>
               </button>
             ))}
+          </div>
+
+          <div className="mt-8 w-full max-w-lg mx-auto space-y-6">
+            {steps[currentStep].id === "extraNotes" ? (
+              <textarea
+                value={customInput}
+                onChange={(e) => setCustomInput(e.target.value)}
+                placeholder="TYPE HERE..."
+                className="w-full h-32 bg-transparent pixel-border p-4 text-white text-xs md:text-sm uppercase tracking-widest focus:outline-none focus:bg-white/5 placeholder:text-white/20 resize-none"
+              />
+            ) : (
+              <input
+                type="text"
+                value={customInput}
+                onChange={(e) => setCustomInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && customInput.trim()) {
+                    handleNext(customInput.trim())
+                  }
+                }}
+                placeholder={steps[currentStep].options.length > 0 ? "OR TYPE YOUR OWN..." : "TYPE HERE..."}
+                className="w-full bg-transparent pixel-border p-4 text-white text-xs md:text-sm uppercase tracking-widest focus:outline-none focus:bg-white/5 placeholder:text-white/20"
+              />
+            )}
+
+            <div className="flex flex-wrap gap-4 justify-center">
+              {customInput.trim() ? (
+                <>
+                  {steps[currentStep].id === "extraNotes" && (
+                    <button
+                      onClick={() => handleNext(customInput.trim(), true)}
+                      className="pixel-border px-6 py-2 text-[10px] text-retro-cyan hover:bg-retro-cyan/20 uppercase tracking-[0.2em] transition-all"
+                    >
+                      Launch_Global_Search_AI
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleNext(customInput.trim())}
+                    className="pixel-border px-6 py-2 text-[10px] text-retro-lavender hover:bg-retro-lavender/20 uppercase tracking-[0.2em] transition-all"
+                  >
+                    {currentStep === steps.length - 1 ? "View_Matches" : "Next_Result"}
+                  </button>
+                </>
+              ) : steps[currentStep].options.length === 0 ? (
+                <>
+                  <button
+                    onClick={() => handleNext("None", true)}
+                    className="pixel-border px-6 py-2 text-[10px] text-retro-cyan/40 hover:text-retro-cyan hover:bg-retro-cyan/10 uppercase tracking-[0.2em] transition-all"
+                  >
+                    Skip_to_Global
+                  </button>
+                  <button
+                    onClick={() => handleNext("None")}
+                    className="pixel-border px-6 py-2 text-[10px] text-white/20 hover:text-white/60 hover:bg-white/5 uppercase tracking-[0.2em] transition-all"
+                  >
+                    Skip_to_Local
+                  </button>
+                </>
+              ) : null}
+            </div>
           </div>
 
           <div className="mt-12 flex justify-center gap-2">

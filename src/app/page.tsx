@@ -34,10 +34,13 @@ function AppContent() {
     }
   }, [searchParams])
 
-  const handleComplete = (prefs: UserPreferences) => {
+  const handleComplete = (prefs: UserPreferences, autoGlobal?: boolean) => {
     setPreferences(prefs)
     setSharedFrag(null)
     setShowResults(true)
+    if (autoGlobal) {
+      setPreferences({ ...prefs, _autoGlobal: true })
+    }
   }
 
   const handleRestart = () => {
