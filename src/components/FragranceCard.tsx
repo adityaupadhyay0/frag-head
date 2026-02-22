@@ -5,8 +5,7 @@ import RadarGraph from "./RadarGraph"
 import ProjectionTimeline from "./ProjectionTimeline"
 import MoodBar from "./MoodBar"
 import ScentAura from "./ScentAura"
-import { useEffect, useState } from "react"
-import { generateScentStory as getAIStory } from "@/lib/gemini"
+import { useState } from "react"
 import { motion } from "framer-motion"
 import { Share2, ShoppingCart } from "lucide-react"
 
@@ -15,13 +14,10 @@ interface FragranceCardProps {
   prefs: UserPreferences
 }
 
-export default function FragranceCard({ fragrance, prefs }: FragranceCardProps) {
-  const [aiData, setAiData] = useState<{story: string, outfitSuggestions: string, emotionalDescription: string} | null>(null)
+export default function FragranceCard({ fragrance }: FragranceCardProps) {
   const [copied, setCopied] = useState(false)
 
-  useEffect(() => {
-    getAIStory(fragrance, prefs).then(setAiData)
-  }, [fragrance, prefs])
+  const aiData = fragrance.aiStory
 
   const copyLink = () => {
     const url = new URL(window.location.href)

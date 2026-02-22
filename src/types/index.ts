@@ -26,6 +26,11 @@ export interface Fragrance {
   weather: (Weather | string)[];
   price_range: PriceRange | string;
   colors: string[];
+  aiStory?: {
+    story: string;
+    outfitSuggestions: string;
+    emotionalDescription: string;
+  };
 }
 
 export interface UserPreferences {
