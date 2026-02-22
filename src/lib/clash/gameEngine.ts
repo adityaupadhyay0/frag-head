@@ -1,22 +1,36 @@
-import { Match, Difficulty, ClashFragrance } from "@/types/clash";
+import { Match, Difficulty, ClashFragrance, RoundResult } from "@/types/clash";
 import { getRandomFragrance, CLASH_POOL } from "@/data/clashPool";
 
 /**
- * Game Engine Logic for Frag-Head Clash
+ * Game Engine Logic for Frag-Head Clash 2.0
  */
 
 export function startMatch(difficulty: Difficulty): Match {
-  const frag = getRandomFragrance(difficulty);
   return {
     id: Math.random().toString(36).substring(2, 11),
-    fragranceId: frag.id,
     difficulty,
-    players: [],
-    roundNumber: 1,
+    currentRound: 1,
+    totalRounds: 5,
     startTime: Date.now(),
     hintsUnlocked: [],
     penalty: 0,
-    isCompleted: false
+    isCompleted: false,
+    rounds: [],
+    totalScore: 0
+  };
+}
+
+export function startNextRound(match: Match): Match {
+  if (match.currentRound >= match.totalRounds) {
+    return { ...match, isCompleted: true };
+  }
+
+  return {
+    ...match,
+    currentRound: match.currentRound + 1,
+    startTime: Date.now(),
+    hintsUnlocked: [],
+    penalty: 0
   };
 }
 
@@ -54,30 +68,57 @@ export function getHint(match: Match, hintType: string, penalty: number = 0): Ma
   return {
     ...match,
     hintsUnlocked: [...match.hintsUnlocked, hintType],
-    penalty: match.penalty + penalty
+    penalty: (match.penalty || 0) + penalty
   };
 }
 
-export function checkGuess(match: Match, guess: string): {
+export function checkGuess(
+  match: Match,
+  fragranceId: string,
+  guess: string,
+  bonusGuesses: { accord?: string, archetype?: string } = {}
+): {
   correct: boolean;
   fragrance?: ClashFragrance;
   bonuses: { guessedAccord: boolean; guessedArchetype: boolean }
 } {
-  const fragrance = CLASH_POOL.find(f => f.id === match.fragranceId);
+  const fragrance = CLASH_POOL.find(f => f.id === fragranceId);
   if (!fragrance) return { correct: false, bonuses: { guessedAccord: false, guessedArchetype: false } };
 
   const normalizedGuess = guess.toLowerCase().trim();
   const correct = normalizedGuess === fragrance.name.toLowerCase() ||
                   normalizedGuess === `${fragrance.brand.toLowerCase()} ${fragrance.name.toLowerCase()}`;
 
-  // Check for bonuses (if they guessed keywords in the brand/name input or separate fields)
-  // For the demo, we might have separate inputs or just check if the guess contains them
-  const guessedAccord = normalizedGuess.includes(fragrance.dna.dominant_accord.toLowerCase());
-  const guessedArchetype = normalizedGuess.includes(fragrance.dna.archetype.toLowerCase());
+  // Check for bonuses
+  const guessedAccord = bonusGuesses.accord?.toLowerCase().trim() === fragrance.dna.dominant_accord.toLowerCase();
+  const guessedArchetype = bonusGuesses.archetype?.toLowerCase().trim() === fragrance.dna.archetype.toLowerCase();
 
   return {
     correct,
     fragrance,
     bonuses: { guessedAccord, guessedArchetype }
   };
+}
+
+export function getAptitude(rounds: RoundResult[]): { [key: string]: number } {
+  const aptitude: { [key: string]: number } = {};
+
+  rounds.forEach(r => {
+    const frag = CLASH_POOL.find(f => f.id === r.fragranceId);
+    if (!frag || !r.guessedCorrectly) return;
+
+    const family = frag.family || "Unknown";
+    aptitude[family] = (aptitude[family] || 0) + 20; // 20% boost per correct guess in family
+
+    frag.accords.forEach(a => {
+        aptitude[a] = (aptitude[a] || 0) + 10;
+    });
+  });
+
+  // Cap at 100
+  Object.keys(aptitude).forEach(k => {
+    aptitude[k] = Math.min(100, aptitude[k]);
+  });
+
+  return aptitude;
 }

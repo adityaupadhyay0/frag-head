@@ -20,21 +20,35 @@ export interface ClashFragrance extends Fragrance {
 
 export type Difficulty = "Easy" | "Medium" | "Hard";
 
+export interface RoundResult {
+  roundNumber: number;
+  fragranceId: string;
+  guessedCorrectly: boolean;
+  score: number;
+  timeSpent: number;
+  bonuses: {
+    guessedAccord: boolean;
+    guessedArchetype: boolean;
+  };
+}
+
 export interface Match {
   id: string;
-  fragranceId: string;
   difficulty: Difficulty;
-  players: string[];
-  roundNumber: number;
-  startTime: number; // timestamp
+  currentRound: number;
+  totalRounds: number;
+  startTime: number; // timestamp for current round
   hintsUnlocked: string[];
   penalty: number;
   isCompleted: boolean;
-  score?: number;
+  rounds: RoundResult[];
+  totalScore: number;
 }
 
 export interface GameState {
   currentMatch: Match | null;
   history: Match[];
-  totalScore: number;
+  userAptitude: {
+    [key: string]: number; // e.g., "Woody": 85
+  };
 }
