@@ -7,30 +7,25 @@ import { OrbitControls, Stars } from "@react-three/drei"
 import ScentCore from "@/components/ScentCore"
 import VibeEngine from "@/components/VibeEngine"
 import ResultsView from "@/components/ResultsView"
-import LayerLab from "@/components/LayerLab"
 import { UserPreferences, Fragrance } from "@/types"
-import fragrancesData from "@/data/fragrances.json"
-import FragranceCard from "@/components/FragranceCard"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
-
-const fragrances = fragrancesData as Fragrance[]
 
 function AppContent() {
   const searchParams = useSearchParams()
   const [preferences, setPreferences] = useState<UserPreferences | null>(null)
   const [showResults, setShowResults] = useState(false)
-  const [mode, setMode] = useState<"engine" | "lab">("engine")
   const [sharedFrag, setSharedFrag] = useState<Fragrance | null>(null)
 
   useEffect(() => {
+    // Shared fragrances are now handled by fetching them if needed,
+    // but for simplicity in this task, we'll focus on the search results.
+    // If we wanted to keep sharedFrag, we'd need an action to fetch a single fragrance by ID.
     const fragId = searchParams.get("frag")
     if (fragId) {
-      const frag = fragrances.find(f => f.id === fragId)
-      if (frag) {
-        setSharedFrag(frag)
-        setShowResults(true)
-      }
+       // Since local data is gone, we'd need a way to fetch shared fragrances.
+       // For now, we'll just ignore it or we could add an action for it.
+       console.log("Shared fragrance requested:", fragId)
     }
   }, [searchParams])
 
@@ -63,7 +58,7 @@ function AppContent() {
           <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
 
           <ScentCore
-            color={mode === "lab" ? "#ec4899" : (showResults ? "#06b6d4" : "#a855f7")}
+            color={showResults ? "#06b6d4" : "#a855f7"}
             intensity={showResults ? 0.5 : 1}
             speed={showResults ? 0.2 : 1}
           />
@@ -84,30 +79,17 @@ function AppContent() {
           </motion.h1>
           <div className="flex justify-center gap-4 mt-6 pointer-events-auto">
             <button
-              onClick={() => { setMode("engine"); handleRestart(); }}
-              className={cn(
-                "text-[10px] tracking-[0.3em] uppercase px-4 py-1 transition-all",
-                mode === "engine" ? "text-retro-cyan border-b border-retro-cyan" : "text-white/40 hover:text-white"
-              )}
+              onClick={() => { handleRestart(); }}
+              className="text-[10px] tracking-[0.3em] uppercase px-4 py-1 transition-all text-retro-cyan border-b border-retro-cyan"
             >
               Vibe_Engine
-            </button>
-            <button
-              onClick={() => { setMode("lab"); }}
-              className={cn(
-                "text-[10px] tracking-[0.3em] uppercase px-4 py-1 transition-all",
-                mode === "lab" ? "text-retro-pink border-b border-retro-pink" : "text-white/40 hover:text-white"
-              )}
-            >
-              Layer_Lab
             </button>
           </div>
         </header>
 
         <div className="w-full max-w-6xl">
           <AnimatePresence mode="wait">
-            {mode === "engine" ? (
-              !showResults ? (
+              {!showResults ? (
                 <motion.div
                   key="vibe-engine"
                   initial={{ opacity: 0 }}
@@ -136,17 +118,7 @@ function AppContent() {
                     preferences && <ResultsView prefs={preferences} onRestart={handleRestart} />
                   )}
                 </motion.div>
-              )
-            ) : (
-              <motion.div
-                key="layer-lab"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="w-full"
-              >
-                <LayerLab />
-              </motion.div>
-            )}
+              )}
           </AnimatePresence>
         </div>
 

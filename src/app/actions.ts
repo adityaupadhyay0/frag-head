@@ -106,6 +106,11 @@ export async function searchInternetFragrancesAction(prefs: UserPreferences) {
       - Extra Notes: ${prefs.extraNotes}
 
       Find 3-5 unique and matching fragrances that are NOT typically in a basic starter kit.
+      For EACH fragrance, you must ALSO generate:
+      1. A cinematic micro-story (3-4 lines) that captures the "vibe". No cringe.
+      2. Specific outfit pairing suggestions based on the user's style preference.
+      3. An emotional description of how this scent feels.
+
       Return the results as a JSON array of objects following this exact structure:
 
       {
@@ -129,6 +134,11 @@ export async function searchInternetFragrancesAction(prefs: UserPreferences) {
         weather: string[];
         price_range: "Designer" | "Luxury";
         colors: string[]; // 5 hex colors that represent the scent vibe
+        aiStory: {
+          story: string;
+          outfitSuggestions: string;
+          emotionalDescription: string;
+        };
       }
 
       Return ONLY the JSON array. Do not include markdown formatting like \`\`\`json.
@@ -151,47 +161,64 @@ export async function searchInternetFragrancesAction(prefs: UserPreferences) {
     }
   }
 
-export async function rankLocalMatchesAction(prefs: UserPreferences, fragrances: Fragrance[]) {
-    if (!apiKey) return fragrances.slice(0, 5);
+export async function searchInternetFragrancesStreamAction(prefs: UserPreferences) {
+    if (!apiKey) {
+      throw new Error("API Key missing");
+    }
 
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
 
-    // We only send a subset of data to avoid token limits
-    const fragList = fragrances.map(f => ({
-        id: f.id,
-        name: f.name,
-        brand: f.brand,
-        notes: f.notes,
-        vibe: f.vibe
-    }));
-
     const prompt = `
-    You are a fragrance matching AI. Rank the following local fragrances based on the user preferences.
+      You are a world-class fragrance expert and scout for "Frag-Head".
+      The user is looking for new fragrances across the entire world (internet knowledge) based on their profile.
 
-    User Preferences:
-    - Occasion: ${prefs.occasion}
-    - Style: ${prefs.outfit}
-    - Mood: ${prefs.mood}
-    - Weather: ${prefs.weather}
-    - Extra Notes: ${prefs.extraNotes}
+      User Profile:
+      - Occasion: ${prefs.occasion}
+      - Outfit Style: ${prefs.outfit}
+      - Mood/Vibe: ${prefs.mood}
+      - Weather: ${prefs.weather}
+      - Gender: ${prefs.gender}
+      - Budget: ${prefs.budget}
+      - Extra Notes: ${prefs.extraNotes}
 
-    Fragrances to rank:
-    ${JSON.stringify(fragList)}
+      Find 3-5 unique and matching fragrances that are NOT typically in a basic starter kit.
+      For EACH fragrance, you must ALSO generate:
+      1. A cinematic micro-story (3-4 lines) that captures the "vibe". No cringe.
+      2. Specific outfit pairing suggestions based on the user's style preference.
+      3. An emotional description of how this scent feels.
 
-    Return a JSON array of fragrance IDs in order of best match to worst. Return ONLY the JSON array.
+      Return the results as a JSON array of objects following this exact structure:
+
+      {
+        "id": string, // unique slug
+        "name": string,
+        "brand": string,
+        "gender": "Men" | "Women" | "Unisex",
+        "accords": string[],
+        "vibe": string,
+        "notes": {
+          "top": string[],
+          "mid": string[],
+          "base": string[]
+        },
+        "season": string,
+        "longevity": string,
+        "sillage": string,
+        "occasion": string[],
+        "style": string[],
+        "mood": string[],
+        "weather": string[],
+        "price_range": "Designer" | "Luxury",
+        "colors": string[], // 5 hex colors that represent the scent vibe
+        "aiStory": {
+          "story": string,
+          "outfitSuggestions": string,
+          "emotionalDescription": string
+        }
+      }
+
+      Return ONLY the JSON array. Do not include markdown formatting like \`\`\`json.
     `;
 
-    try {
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
-        const jsonMatch = text.match(/\[.*\]/s);
-        if (jsonMatch) {
-            const ids = JSON.parse(jsonMatch[0]) as string[];
-            return ids.map(id => fragrances.find(f => f.id === id)).filter(Boolean) as Fragrance[];
-        }
-        return fragrances.slice(0, 5);
-    } catch (error) {
-        return fragrances.slice(0, 5);
-    }
+    return model.generateContentStream(prompt);
 }

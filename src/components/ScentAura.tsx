@@ -28,10 +28,23 @@ export default function ScentAura({ fragrance }: ScentAuraProps) {
     const colors = fragrance.colors
     const cellSize = 10
 
+    // Simple string hash function
+    const getStringHash = (str: string) => {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+          const char = str.charCodeAt(i);
+          hash = ((hash << 5) - hash) + char;
+          hash = hash & hash; // Convert to 32bit integer
+        }
+        return Math.abs(hash);
+    };
+
+    const idHash = getStringHash(fragrance.id);
+
     for (let x = 0; x < size; x += cellSize) {
       for (let y = 0; y < size; y += cellSize) {
         // Use a pseudo-random based on fragrance id and position
-        const hash = (parseInt(fragrance.id) * 123 + x * 456 + y * 789) % 100
+        const hash = (idHash * 123 + x * 456 + y * 789) % 100
         if (hash > 40) {
           const colorIdx = hash % colors.length
           ctx.fillStyle = colors[colorIdx]
