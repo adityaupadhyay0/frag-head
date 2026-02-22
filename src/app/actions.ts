@@ -15,7 +15,7 @@ export async function getScentStoryAction(fragrance: Fragrance, prefs: UserPrefe
     };
   }
 
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
 
   const prompt = `
     You are an expert fragrance storyteller for "Frag-Head".
@@ -58,7 +58,7 @@ export async function predictLayeringAction(frag1: Fragrance, frag2: Fragrance) 
         };
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
 
     const prompt = `
     Predict the outcome of layering these two fragrances:
@@ -90,7 +90,7 @@ export async function searchInternetFragrancesAction(prefs: UserPreferences) {
       return [];
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
 
     const prompt = `
       You are a world-class fragrance expert and scout for "Frag-Head".
@@ -154,7 +154,7 @@ export async function searchInternetFragrancesAction(prefs: UserPreferences) {
 export async function rankLocalMatchesAction(prefs: UserPreferences, fragrances: Fragrance[]) {
     if (!apiKey) return fragrances.slice(0, 5);
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
 
     // We only send a subset of data to avoid token limits
     const fragList = fragrances.map(f => ({
