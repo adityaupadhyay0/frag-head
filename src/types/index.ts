@@ -9,7 +9,7 @@ export interface Fragrance {
   id: string;
   name: string;
   brand: string;
-  gender: Gender;
+  gender: Gender | string;
   accords: string[];
   vibe: string;
   notes: {
@@ -20,19 +20,21 @@ export interface Fragrance {
   season: string;
   longevity: string;
   sillage: string;
-  occasion: Occasion[];
-  style: Outfit[];
-  mood: Mood[];
-  weather: Weather[];
-  price_range: PriceRange;
+  occasion: (Occasion | string)[];
+  style: (Outfit | string)[];
+  mood: (Mood | string)[];
+  weather: (Weather | string)[];
+  price_range: PriceRange | string;
   colors: string[];
 }
 
 export interface UserPreferences {
-  occasion?: Occasion;
-  outfit?: Outfit;
-  mood?: Mood;
-  weather?: Weather;
-  gender?: Gender;
-  budget?: PriceRange;
+  occasion?: Occasion | string;
+  outfit?: Outfit | string;
+  mood?: Mood | string;
+  weather?: Weather | string;
+  gender?: Gender | string;
+  budget?: PriceRange | string;
+  extraNotes?: string;
+  _autoGlobal?: boolean;
 }
