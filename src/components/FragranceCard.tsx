@@ -7,14 +7,15 @@ import MoodBar from "./MoodBar"
 import ScentAura from "./ScentAura"
 import { useState } from "react"
 import { motion } from "framer-motion"
-import { Share2, ShoppingCart } from "lucide-react"
+import { Share2, ShoppingCart, FlaskConical } from "lucide-react"
 
 interface FragranceCardProps {
   fragrance: Fragrance
   prefs: UserPreferences
+  onAddToLayerLab?: (fragrance: Fragrance) => void
 }
 
-export default function FragranceCard({ fragrance }: FragranceCardProps) {
+export default function FragranceCard({ fragrance, prefs, onAddToLayerLab }: FragranceCardProps) {
   const [copied, setCopied] = useState(false)
 
   const aiData = fragrance.aiStory
@@ -39,6 +40,15 @@ export default function FragranceCard({ fragrance }: FragranceCardProps) {
             <p className="text-retro-cyan text-sm tracking-[0.3em] uppercase">{fragrance.brand}</p>
           </div>
           <div className="flex gap-2">
+            {onAddToLayerLab && (
+              <button
+                onClick={() => onAddToLayerLab(fragrance)}
+                className="p-2 pixel-border hover:bg-retro-lavender/20 text-retro-lavender"
+                title="Add to Layer Lab"
+              >
+                <FlaskConical size={16} />
+              </button>
+            )}
             <button
               onClick={copyLink}
               className="p-2 pixel-border hover:bg-retro-lavender/20 text-retro-lavender"

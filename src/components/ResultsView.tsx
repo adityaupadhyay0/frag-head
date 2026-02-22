@@ -10,9 +10,10 @@ import { fragranceFacts } from "@/data/fragranceFacts"
 interface ResultsViewProps {
   prefs: UserPreferences
   onRestart: () => void
+  onAddToLayerLab: (fragrance: Fragrance) => void
 }
 
-export default function ResultsView({ prefs, onRestart }: ResultsViewProps) {
+export default function ResultsView({ prefs, onRestart, onAddToLayerLab }: ResultsViewProps) {
   const [internetMatches, setInternetMatches] = useState<Fragrance[]>([])
   const [loading, setLoading] = useState(false)
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -187,7 +188,11 @@ export default function ResultsView({ prefs, onRestart }: ResultsViewProps) {
               exit={{ opacity: 0, x: -20 }}
               className="w-full"
             >
-              <FragranceCard fragrance={internetMatches[currentIndex]} prefs={prefs} />
+              <FragranceCard
+                fragrance={internetMatches[currentIndex]}
+                prefs={prefs}
+                onAddToLayerLab={onAddToLayerLab}
+              />
             </motion.div>
           ) : (
              <div className="w-full h-64 flex flex-col items-center justify-center pixel-border border-dashed border-white/10">

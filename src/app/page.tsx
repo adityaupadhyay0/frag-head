@@ -7,6 +7,8 @@ import { OrbitControls, Stars } from "@react-three/drei"
 import ScentCore from "@/components/ScentCore"
 import VibeEngine from "@/components/VibeEngine"
 import ResultsView from "@/components/ResultsView"
+import FragranceCard from "@/components/FragranceCard"
+import LayerLab from "@/components/LayerLab"
 import { UserPreferences, Fragrance } from "@/types"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
@@ -14,8 +16,9 @@ import { cn } from "@/lib/utils"
 function AppContent() {
   const searchParams = useSearchParams()
   const [preferences, setPreferences] = useState<UserPreferences | null>(null)
-  const [showResults, setShowResults] = useState(false)
+  const [activeView, setActiveView] = useState<'vibe' | 'results' | 'layer-lab'>('vibe')
   const [sharedFrag, setSharedFrag] = useState<Fragrance | null>(null)
+  const [selectedForLayering, setSelectedForLayering] = useState<Fragrance[]>([])
 
   useEffect(() => {
     // Shared fragrances are now handled by fetching them if needed,
@@ -32,7 +35,7 @@ function AppContent() {
   const handleComplete = (prefs: UserPreferences, autoGlobal?: boolean) => {
     setPreferences(prefs)
     setSharedFrag(null)
-    setShowResults(true)
+    setActiveView('results')
     if (autoGlobal) {
       setPreferences({ ...prefs, _autoGlobal: true })
     }
@@ -41,9 +44,20 @@ function AppContent() {
   const handleRestart = () => {
     setPreferences(null)
     setSharedFrag(null)
-    setShowResults(false)
+    setActiveView('vibe')
+    setSelectedForLayering([])
     // Clear search params
     window.history.replaceState({}, '', '/')
+  }
+
+  const addToLayerLab = (fragrance: Fragrance) => {
+    setSelectedForLayering(prev => {
+      if (prev.find(f => f.id === fragrance.id)) return prev
+      const next = [...prev, fragrance]
+      if (next.length > 2) return [next[1], next[2]]
+      return next
+    })
+    setActiveView('layer-lab')
   }
 
   return (
@@ -58,9 +72,9 @@ function AppContent() {
           <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
 
           <ScentCore
-            color={showResults ? "#06b6d4" : "#a855f7"}
-            intensity={showResults ? 0.5 : 1}
-            speed={showResults ? 0.2 : 1}
+            color={activeView !== 'vibe' ? "#06b6d4" : "#a855f7"}
+            intensity={activeView !== 'vibe' ? 0.5 : 1}
+            speed={activeView !== 'vibe' ? 0.2 : 1}
           />
 
           <OrbitControls enableZoom={false} enablePan={false} autoRotate autoRotateSpeed={0.5} />
@@ -80,16 +94,28 @@ function AppContent() {
           <div className="flex justify-center gap-4 mt-6 pointer-events-auto">
             <button
               onClick={() => { handleRestart(); }}
-              className="text-[10px] tracking-[0.3em] uppercase px-4 py-1 transition-all text-retro-cyan border-b border-retro-cyan"
+              className={cn(
+                  "text-[10px] tracking-[0.3em] uppercase px-4 py-1 transition-all border-b",
+                  activeView === 'vibe' ? "text-retro-cyan border-retro-cyan" : "text-white/40 border-transparent hover:text-white"
+              )}
             >
               Vibe_Engine
+            </button>
+            <button
+              onClick={() => setActiveView('layer-lab')}
+              className={cn(
+                  "text-[10px] tracking-[0.3em] uppercase px-4 py-1 transition-all border-b",
+                  activeView === 'layer-lab' ? "text-retro-lavender border-retro-lavender" : "text-white/40 border-transparent hover:text-white"
+              )}
+            >
+              Layer_Lab
             </button>
           </div>
         </header>
 
         <div className="w-full max-w-6xl">
           <AnimatePresence mode="wait">
-              {!showResults ? (
+              {activeView === 'vibe' ? (
                 <motion.div
                   key="vibe-engine"
                   initial={{ opacity: 0 }}
@@ -99,11 +125,12 @@ function AppContent() {
                 >
                   <VibeEngine onComplete={handleComplete} />
                 </motion.div>
-              ) : (
+              ) : activeView === 'results' ? (
                 <motion.div
                   key="results"
                   initial={{ opacity: 0, y: 40 }}
                   animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -40 }}
                   className="w-full"
                 >
                   {sharedFrag ? (
@@ -112,11 +139,24 @@ function AppContent() {
                          <h2 className="text-sm text-retro-cyan uppercase tracking-[0.5em]">Shared Discovery</h2>
                          <button onClick={handleRestart} className="text-[10px] text-retro-lavender uppercase border border-retro-lavender/30 px-3 py-1">Reset</button>
                       </div>
-                      <FragranceCard fragrance={sharedFrag} prefs={{}} />
+                      <FragranceCard fragrance={sharedFrag} prefs={{}} onAddToLayerLab={addToLayerLab} />
                     </div>
                   ) : (
-                    preferences && <ResultsView prefs={preferences} onRestart={handleRestart} />
+                    preferences && <ResultsView prefs={preferences} onRestart={handleRestart} onAddToLayerLab={addToLayerLab} />
                   )}
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="layer-lab"
+                  initial={{ opacity: 0, scale: 1.1 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  className="w-full"
+                >
+                    <LayerLab
+                        initialFragrances={selectedForLayering}
+                        onClear={() => setSelectedForLayering([])}
+                    />
                 </motion.div>
               )}
           </AnimatePresence>
