@@ -137,11 +137,12 @@ export async function searchInternetFragrancesAction(prefs: UserPreferences) {
       - Budget: ${prefs.budget}
       - Extra Notes: ${prefs.extraNotes}
 
-      Find 3-5 unique and matching fragrances that are NOT typically in a basic starter kit.
+      Find 3-5 unique and matching fragrances that are NOT typically in a basic starter kit. Focus on niche, artistic, or high-tier designer scents that align perfectly with the user's mood and weather.
+
       For EACH fragrance, you must ALSO generate:
-      1. A cinematic micro-story (3-4 lines) that captures the "vibe". No cringe.
-      2. Specific outfit pairing suggestions based on the user's style preference.
-      3. An emotional description of how this scent feels.
+      1. A cinematic micro-story (3-4 lines) that captures the "vibe" in a noir, atmospheric style. Focus on sensory details like light, shadow, texture, and emotion.
+      2. Specific outfit pairing suggestions that complement the scent's weight and the user's style.
+      3. An emotional description of the scent's impact on the wearer and others.
 
       Return the results as a JSON array of objects following this exact structure:
 

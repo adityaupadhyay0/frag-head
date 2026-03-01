@@ -9,14 +9,19 @@ import VibeEngine from "@/components/VibeEngine"
 import ResultsView from "@/components/ResultsView"
 import FragranceCard from "@/components/FragranceCard"
 import LayerLab from "@/components/LayerLab"
+import ClashGame from "@/components/ClashGame"
+import ScentJournal from "@/components/ScentJournal"
 import { UserPreferences, Fragrance } from "@/types"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
+import { Volume2, VolumeX } from "lucide-react"
+import { useSoundEngine } from "@/lib/sound"
 
 function AppContent() {
   const searchParams = useSearchParams()
+  const { initAudio, isAudioEnabled, playSparkle, playSwoosh } = useSoundEngine()
   const [preferences, setPreferences] = useState<UserPreferences | null>(null)
-  const [activeView, setActiveView] = useState<'vibe' | 'results' | 'layer-lab'>('vibe')
+  const [activeView, setActiveView] = useState<'vibe' | 'results' | 'layer-lab' | 'clash' | 'journal'>('vibe')
   const [sharedFrag, setSharedFrag] = useState<Fragrance | null>(null)
   const [selectedForLayering, setSelectedForLayering] = useState<Fragrance[]>([])
 
@@ -36,6 +41,7 @@ function AppContent() {
     setPreferences(prefs)
     setSharedFrag(null)
     setActiveView('results')
+    playSwoosh()
     if (autoGlobal) {
       setPreferences({ ...prefs, _autoGlobal: true })
     }
@@ -46,6 +52,7 @@ function AppContent() {
     setSharedFrag(null)
     setActiveView('vibe')
     setSelectedForLayering([])
+    playSwoosh()
     // Clear search params
     window.history.replaceState({}, '', '/')
   }
@@ -58,10 +65,12 @@ function AppContent() {
       return next
     })
     setActiveView('layer-lab')
+    playSwoosh()
   }
 
   return (
-    <main className="relative min-h-screen flex flex-col items-center overflow-x-hidden">
+    <main className="relative min-h-screen flex flex-col items-center overflow-x-hidden bg-black selection:bg-retro-lavender/50 selection:text-white">
+      <div className="scanline" />
       {/* Background 3D Scene */}
       <div className="fixed inset-0 z-0">
         <Canvas camera={{ position: [0, 0, 5], fov: 75 }}>
@@ -72,7 +81,7 @@ function AppContent() {
           <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
 
           <ScentCore
-            color={activeView !== 'vibe' ? "#06b6d4" : "#a855f7"}
+            color={activeView === 'layer-lab' ? "#06b6d4" : activeView === 'clash' ? "#f43f5e" : "#a855f7"}
             intensity={activeView !== 'vibe' ? 0.5 : 1}
             speed={activeView !== 'vibe' ? 0.2 : 1}
           />
@@ -83,11 +92,20 @@ function AppContent() {
 
       {/* Content Layer */}
       <div className="relative z-10 w-full flex flex-col items-center pt-10 md:pt-20 pb-10 min-h-screen px-4">
+        <div className="fixed top-4 right-4 z-50">
+            <button
+                onClick={initAudio}
+                className="p-2 pixel-border bg-black/50 text-white/50 hover:text-retro-lavender transition-colors"
+            >
+                {isAudioEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+            </button>
+        </div>
+
         <header className="mb-8 text-center pointer-events-none">
           <motion.h1
             initial={{ opacity: 0, letterSpacing: "0.5em" }}
             animate={{ opacity: 1, letterSpacing: "1.2em" }}
-            className="text-4xl md:text-6xl font-bold text-white tracking-[1.2em] uppercase ml-[1.2em]"
+            className="text-4xl md:text-6xl font-bold text-white tracking-[1.2em] uppercase ml-[1.2em] drop-shadow-[0_0_15px_rgba(168,85,247,0.5)]"
           >
             Frag-Head
           </motion.h1>
@@ -102,13 +120,31 @@ function AppContent() {
               Vibe_Engine
             </button>
             <button
-              onClick={() => setActiveView('layer-lab')}
+              onClick={() => { setActiveView('layer-lab'); playSwoosh(); }}
               className={cn(
                   "text-[10px] tracking-[0.3em] uppercase px-4 py-1 transition-all border-b",
                   activeView === 'layer-lab' ? "text-retro-lavender border-retro-lavender" : "text-white/40 border-transparent hover:text-white"
               )}
             >
               Layer_Lab
+            </button>
+            <button
+              onClick={() => { setActiveView('clash'); playSwoosh(); }}
+              className={cn(
+                  "text-[10px] tracking-[0.3em] uppercase px-4 py-1 transition-all border-b",
+                  activeView === 'clash' ? "text-rose-500 border-rose-500" : "text-white/40 border-transparent hover:text-white"
+              )}
+            >
+              Frag_Clash
+            </button>
+            <button
+              onClick={() => { setActiveView('journal'); playSwoosh(); }}
+              className={cn(
+                  "text-[10px] tracking-[0.3em] uppercase px-4 py-1 transition-all border-b",
+                  activeView === 'journal' ? "text-yellow-500 border-yellow-500" : "text-white/40 border-transparent hover:text-white"
+              )}
+            >
+              Journal
             </button>
           </div>
         </header>
@@ -145,7 +181,7 @@ function AppContent() {
                     preferences && <ResultsView prefs={preferences} onRestart={handleRestart} onAddToLayerLab={addToLayerLab} />
                   )}
                 </motion.div>
-              ) : (
+              ) : activeView === 'layer-lab' ? (
                 <motion.div
                   key="layer-lab"
                   initial={{ opacity: 0, scale: 1.1 }}
@@ -157,6 +193,26 @@ function AppContent() {
                         initialFragrances={selectedForLayering}
                         onClear={() => setSelectedForLayering([])}
                     />
+                </motion.div>
+              ) : activeView === 'clash' ? (
+                <motion.div
+                    key="clash"
+                    initial={{ opacity: 0, x: 100 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -100 }}
+                    className="w-full"
+                >
+                    <ClashGame />
+                </motion.div>
+              ) : (
+                <motion.div
+                    key="journal"
+                    initial={{ opacity: 0, y: 100 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -100 }}
+                    className="w-full"
+                >
+                    <ScentJournal />
                 </motion.div>
               )}
           </AnimatePresence>

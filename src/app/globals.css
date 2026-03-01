@@ -28,6 +28,16 @@ body {
       0 4px 0 -2px #0a0a0f,
       -4px 0 0 -2px #0a0a0f,
       4px 0 0 -2px #0a0a0f;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .pixel-border:hover {
+    @apply border-white/20;
+    box-shadow:
+      0 -4px 0 -2px rgba(255,255,255,0.1),
+      0 4px 0 -2px rgba(255,255,255,0.1),
+      -4px 0 0 -2px rgba(255,255,255,0.1),
+      4px 0 0 -2px rgba(255,255,255,0.1);
   }
 
   .pixel-border-lavender {
