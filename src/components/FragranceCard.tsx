@@ -5,9 +5,11 @@ import RadarGraph from "./RadarGraph"
 import ProjectionTimeline from "./ProjectionTimeline"
 import MoodBar from "./MoodBar"
 import ScentAura from "./ScentAura"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Share2, ShoppingCart, FlaskConical } from "lucide-react"
+import { Share2, ShoppingCart, FlaskConical, BookMarked, Check } from "lucide-react"
+import { useSoundEngine } from "@/lib/sound"
+import { cn } from "@/lib/utils"
 
 interface FragranceCardProps {
   fragrance: Fragrance
@@ -17,6 +19,16 @@ interface FragranceCardProps {
 
 export default function FragranceCard({ fragrance, prefs, onAddToLayerLab }: FragranceCardProps) {
   const [copied, setCopied] = useState(false)
+  const [isSaved, setIsSaved] = useState(false)
+  const { playSparkle } = useSoundEngine()
+
+  useEffect(() => {
+    const data = localStorage.getItem('fraghead_journal')
+    if (data) {
+        const saved: Fragrance[] = JSON.parse(data)
+        setIsSaved(saved.some(f => f.id === fragrance.id))
+    }
+  }, [fragrance.id])
 
   const aiData = fragrance.aiStory
 
@@ -26,6 +38,20 @@ export default function FragranceCard({ fragrance, prefs, onAddToLayerLab }: Fra
     navigator.clipboard.writeText(url.toString())
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const toggleSave = () => {
+    const data = localStorage.getItem('fraghead_journal')
+    let saved: Fragrance[] = data ? JSON.parse(data) : []
+    if (isSaved) {
+        saved = saved.filter(f => f.id !== fragrance.id)
+        setIsSaved(false)
+    } else {
+        saved.push(fragrance)
+        setIsSaved(true)
+        playSparkle()
+    }
+    localStorage.setItem('fraghead_journal', JSON.stringify(saved))
   }
 
   const buyLink = `https://www.google.com/search?q=buy+${fragrance.brand}+${fragrance.name}`
@@ -40,6 +66,16 @@ export default function FragranceCard({ fragrance, prefs, onAddToLayerLab }: Fra
             <p className="text-retro-cyan text-sm tracking-[0.3em] uppercase">{fragrance.brand}</p>
           </div>
           <div className="flex gap-2">
+            <button
+                onClick={toggleSave}
+                className={cn(
+                    "p-2 pixel-border transition-all",
+                    isSaved ? "bg-yellow-500/20 text-yellow-500 border-yellow-500/50" : "hover:bg-retro-lavender/20 text-retro-lavender"
+                )}
+                title="Save to Journal"
+            >
+                {isSaved ? <Check size={16} /> : <BookMarked size={16} />}
+            </button>
             {onAddToLayerLab && (
               <button
                 onClick={() => onAddToLayerLab(fragrance)}
